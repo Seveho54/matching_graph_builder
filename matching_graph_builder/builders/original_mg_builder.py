@@ -5,14 +5,14 @@ import networkx as nx
 
 class OriginalMatchingGraphBuilder(MatchingGraphBuilderBase):
     def __init__(self, train_graphs, train_labels, mg_creation_alpha, prune_edges,attribute_name = '0', node_ins_c=1.0, node_del_c=1.0, edge_ins_c=1.0,
-                 edge_del_c=1.0, node_subst_fct=None, dataset_name=None):
+                 edge_del_c=1.0, node_subst_fct=None, dataset_name=None, one_hot = False):
         super().__init__(train_graphs, train_labels, mg_creation_alpha, attribute_name, node_ins_c, node_del_c, edge_ins_c, edge_del_c,
-                         node_subst_fct, dataset_name)
+                         node_subst_fct, dataset_name, one_hot)
         self.prune = prune_edges
 
 
     def build_matching_graphs(self, source_graph, target_graph):
-        edit_path,_,_  = calculate_ged(source_graph,target_graph,self.mg_creation_alpha, self.attribute_name)
+        edit_path,_,_  = calculate_ged(source_graph,target_graph,self.mg_creation_alpha, self.attribute_name, self.one_hot)
         matching_graph_source, matching_graph_target = self._build_mgs_from_edit_path(edit_path, source_graph, target_graph)
         return [matching_graph_source,matching_graph_target]
 

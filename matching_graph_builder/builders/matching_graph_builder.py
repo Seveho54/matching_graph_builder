@@ -2,12 +2,14 @@ import pickle
 
 
 class MatchingGraphBuilderBase:
-    def __init__(self, src_graphs, src_labels, tar_graphs, tar_labels, mg_creation_alpha, cross_class, label_name, attribute_names,node_ins_c, node_del_c, edge_ins_c, edge_del_c, node_subst_fct, dataset_name):
+    def __init__(self, src_graphs, src_labels, tar_graphs, tar_labels, mg_creation_alpha, cross_class, label_name, attribute_names,node_ins_c, node_del_c, edge_ins_c, edge_del_c, node_subst_fct, dataset_name,
+                 one_hot):
         self.label_name = label_name
         self.src_graphs = src_graphs
         self.src_labels = src_labels
         self.tar_graphs = tar_graphs
         self.tar_labels = tar_labels
+        self.one_hot = one_hot
 
         self.node_subst_fct = node_subst_fct
         self.edge_del_c = edge_del_c

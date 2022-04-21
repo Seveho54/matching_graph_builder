@@ -5,11 +5,15 @@ from graph_pkg_core.edit_cost.edit_cost_dirac import EditCostDirac
 import graph_loader.transform.nx_to_anthony_transformer as transformer
 import numpy as np
 
-def calculate_ged(source_graph, target_graph, alpha, label_name, attribute_names = None):
-    if attribute_names == []:
+def calculate_ged(source_graph, target_graph, alpha, label_name, attribute_names = None, one_hot = False):
+    if attribute_names == [] and not one_hot:
         ged = GED(EditCostDirac(1., 1., 1., 1., 'dirac', alpha = alpha))
     else:
-        ged = GED(EditCostVector(1., 1., 1., 1., 'euclidean', alpha = alpha))
+        if one_hot:
+            metric = 'dirac'
+        else:
+            metric = 'euclidean'
+        ged = GED(EditCostVector(1., 1., 1., 1., metric, alpha = alpha))
     source_graph_ant = source_graph
     target_graph_ant = target_graph
     if isinstance(source_graph, nx.Graph) and isinstance(target_graph,nx.Graph):
