@@ -2,8 +2,11 @@ import pickle
 
 
 class MatchingGraphBuilderBase:
+    '''
+    Base class for building matching graphs. There are several implementations of the class.
+    '''
     def __init__(self, src_graphs, src_labels, tar_graphs, tar_labels, mg_creation_alpha, cross_class, label_name, attribute_names,node_ins_c, node_del_c, edge_ins_c, edge_del_c, node_subst_fct, dataset_name,
-                 one_hot):
+                 one_hot, remove_isolated_nodes, multipr):
         self.label_name = label_name
         self.src_graphs = src_graphs
         self.src_labels = src_labels
@@ -22,17 +25,23 @@ class MatchingGraphBuilderBase:
         self.dataset_name = dataset_name
         self.cross_class = cross_class
         self.pair_dict = self.create_pairs_dict(cross_class)
+        self.remove_isolated_nodes = remove_isolated_nodes
+        self.multipr = multipr
 
     def build_matching_graphs(self):
         raise NotImplementedError
 
-    # def build_matching_graphs_from_pair(self,src_gr, tar_gr):
-    #     raise NotImplementedError
 
     def build(self, output_folder = None, output_format = "two_lists"):
+        '''
+        Creates the matching graphs out of all possible pairs for src x tar and saves them to a file plus
+        returns them either as two lists: graphs, labels, or as a dictionary with key: label and value: graphs
+        :param output_folder:
+        :param output_format:
+        :return:
+        '''
         mgs_dict = self.build_matching_graphs()
 
-        dump_item = None
         if output_format == "two_lists":
             graphs,lbls = [],[]
             for label, grphs in mgs_dict.items():
@@ -51,6 +60,12 @@ class MatchingGraphBuilderBase:
         return dump_item
 
     def create_pairs_dict(self, cross_class):
+        '''
+        Creates a dictionary of list of tuples for all possible pairs for a given class
+        :param cross_class: boolean
+            if cross class is true, then the pairs are created across different classes as well
+        :return: dictionary containing all the pairs for a given class.
+        '''
         ret_dict = {}
         for cls in self.dataset_classes:
             ret_dict[cls] = []
@@ -62,11 +77,7 @@ class MatchingGraphBuilderBase:
                     if  ((self.src_graphs[i].name != self.tar_graphs[j].name) ):
                         ret_dict[self.src_labels[i]].append((self.src_graphs[i],self.tar_graphs[j]))
                 j += 1
-        # for tr_gr_1, tr_l_1 in zip(self.src_graphs,self.src_labels):
-        #     for tr_gr_2, tr_l_2 in zip(self.tar_graphs,self.tar_labels):
-        #         if ((tr_l_1 == tr_l_2) or cross_class ):
-        #             if  ((tr_gr_1.name != tr_gr_2.name) ):
-        #                 ret_dict[tr_l_1].append((tr_gr_1,tr_gr_2))
+
 
         return ret_dict
 

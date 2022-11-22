@@ -1,21 +1,53 @@
+import itertools
+import multiprocessing
+from multiprocessing import Pool
+
 from matching_graph_builder.builders.matching_graph_builder import MatchingGraphBuilderBase
 from matching_graph_builder.utils.graph_edit_distance import calculate_ged
 import networkx as nx
 
 
 class OriginalMatchingGraphBuilder(MatchingGraphBuilderBase):
-    def __init__(self, train_graphs, train_labels, mg_creation_alpha, prune_edges,attribute_name = '0', node_ins_c=1.0, node_del_c=1.0, edge_ins_c=1.0,
-                 edge_del_c=1.0, node_subst_fct=None, dataset_name=None, one_hot = False):
-        super().__init__(train_graphs, train_labels, mg_creation_alpha, attribute_name, node_ins_c, node_del_c, edge_ins_c, edge_del_c,
-                         node_subst_fct, dataset_name, one_hot)
+    def __init__(self, src_graphs, src_labels, tar_graphs, tar_labels, mg_creation_alpha, cross_class, label_name, attribute_names,
+                 node_ins_c, node_del_c, edge_ins_c, edge_del_c, node_subst_fct, dataset_name, prune_edges,
+                 one_hot = False, remove_isolated_nodes= True, multipr = False):
+        super().__init__(src_graphs, src_labels, tar_graphs, tar_labels, mg_creation_alpha, cross_class, label_name,
+                         attribute_names, node_ins_c, node_del_c, edge_ins_c, edge_del_c, node_subst_fct, dataset_name, one_hot, remove_isolated_nodes, multipr)
         self.prune = prune_edges
 
 
-    def build_matching_graphs(self, source_graph, target_graph):
-        edit_path,_,_  = calculate_ged(source_graph,target_graph,self.mg_creation_alpha, self.attribute_name, self.one_hot)
-        matching_graph_source, matching_graph_target = self._build_mgs_from_edit_path(edit_path, source_graph, target_graph)
-        return [matching_graph_source,matching_graph_target]
+    def build_matching_graphs(self):
+        mgs_dict = {}
+        for key in self.pair_dict.keys():
+            mgs_dict[key] = []
+        for key in mgs_dict.keys():
+            if self.multipr:
+                with Pool(processes=multiprocessing.cpu_count()-3) as pool:
+                    mgs_l = pool.starmap(self.build_mg_from_pair, zip(self.pair_dict[key], itertools.repeat(key)))
+            else:
+                mgs_l = []
+                for graph_pair in self.pair_dict[key]:
+                    mgs_l.append(self.build_mg_from_pair(graph_pair, key))
 
+            for mg_l in mgs_l:
+                for gr,lbl in zip(mg_l[0],mg_l[1]):
+                    if len(gr.nodes()) > 0 and len(gr.edges()) > 0:
+                        mgs_dict[lbl].append(gr)
+
+
+        return mgs_dict
+
+    def build_mg_from_pair(self, graph_pair, graph_class):
+        mgs, mgs_lbls = [],[]
+        src_gr = graph_pair[0]
+        tar_gr = graph_pair[1]
+        edit_path,_,_ = calculate_ged(src_gr,tar_gr,self.mg_creation_alpha,self.label_name, self.attribute_names, self.one_hot)
+        matching_graph_source, matching_graph_target = self._build_mgs_from_edit_path(edit_path, src_gr, tar_gr)
+        mgs.append(matching_graph_source)
+        mgs.append(matching_graph_target)
+        mgs_lbls.append(graph_class)
+        mgs_lbls.append(graph_class)
+        return (mgs, mgs_lbls)
 
     def _build_mgs_from_edit_path(self, edit_path, source_graph, target_graph):
         """

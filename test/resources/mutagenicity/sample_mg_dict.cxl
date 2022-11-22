@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<GraphCollection xmlns:ns="http://www.iam.unibe.ch/%7Emneuhaus/FAN/1.0">
+    <fingerprints base="/scratch/mneuhaus/progs/letter-database/automatic/0.1" classmodel="henry5" count="4">
+        <print file="molecule_muta_1.graphml" class="mutagen"/>
+        <print file="molecule_muta_2.graphml" class="mutagen"/>
+        <print file="molecule_muta_3.graphml" class="mutagen"/>
+        <print file="molecule_non_muta_1.graphml" class="nonmutagen"/>
+        <print file="molecule_non_muta_2.graphml" class="nonmutagen"/>
+
+
+
+    </fingerprints>
+</GraphCollection>

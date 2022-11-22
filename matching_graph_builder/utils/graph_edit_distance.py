@@ -11,6 +11,7 @@ def calculate_ged(source_graph, target_graph, alpha, label_name, attribute_names
     else:
         if one_hot:
             metric = 'dirac'
+            # metric = 'wierdac'
         else:
             metric = 'euclidean'
         ged = GED(EditCostVector(1., 1., 1., 1., metric, alpha = alpha))
@@ -23,6 +24,15 @@ def calculate_ged(source_graph, target_graph, alpha, label_name, attribute_names
     edit_cost = ged.compute_edit_distance(source_graph_ant,target_graph_ant)
     edit_path = convert_path(ged.phi)
     c = ged.C
+    if False:
+        counter_s = 0
+        counter_i_d = 0
+        for ed_op in edit_path:
+            if is_substitution(ed_op[0],ed_op[1], source_graph, target_graph):
+                counter_s +=1
+            if is_deletion(ed_op[0], list(source_graph.nodes()), ed_op[1], list(target_graph.nodes())):
+                counter_i_d += 1
+        print(f"got {counter_s} substitutions and {counter_i_d} deletions/insertions")
     return edit_path, edit_cost, np.array(c)
 
 

@@ -19,10 +19,10 @@ from matching_graph_builder.utils.graph_edit_distance import calculate_ged, is_i
 
 class RandomPathMatchingGraphBuilder(MatchingGraphBuilderBase):
     def __init__(self, src_graphs, src_labels, tar_graphs, tar_labels, mg_creation_alpha, cross_class, label_name, attribute_names,
-                 node_ins_c, node_del_c, edge_ins_c, edge_del_c, node_subst_fct, dataset_name, one_hot = False,nbr_mgs_to_create = 1):
+                 node_ins_c, node_del_c, edge_ins_c, edge_del_c, node_subst_fct, dataset_name, one_hot = False,nbr_mgs_to_create = 1, remove_isolated_nodes= True, multipr = False):
         self.nbr_mgs_to_create = nbr_mgs_to_create
         super().__init__(src_graphs, src_labels, tar_graphs, tar_labels, mg_creation_alpha, cross_class, label_name,
-                         attribute_names, node_ins_c, node_del_c, edge_ins_c, edge_del_c, node_subst_fct, dataset_name, one_hot)
+                         attribute_names, node_ins_c, node_del_c, edge_ins_c, edge_del_c, node_subst_fct, dataset_name, one_hot, remove_isolated_nodes, multipr)
 
         self.build_seeds()
 
@@ -108,20 +108,15 @@ def build_mgs_from_edit_path(edit_path, source_graph, target_graph, keep_percent
     src_node_names = list(source_graph.nodes)
     tar_node_names = list(target_graph.nodes)
     for src_node_idx, tar_node_idx in edit_path:
-        try:
-            if is_epsilon_epsilon(src_node_idx, src_node_names, tar_node_idx, tar_node_names):
-                continue
-            elif is_insertion(src_node_idx, src_node_names, tar_node_idx, tar_node_names):
-                matching_graph_target.remove_node(tar_node_names[tar_node_idx])
-            elif is_deletion(src_node_idx, src_node_names, tar_node_idx, tar_node_names):
-                matching_graph_source.remove_node(src_node_names[src_node_idx])
-            elif is_substitution(src_node_names[src_node_idx], tar_node_names[tar_node_idx],source_graph,target_graph):
-                matching_graph_source = relabel_node(matching_graph_source, src_node_names[src_node_idx], target_graph,tar_node_names[tar_node_idx])
-                matching_graph_target = relabel_node(matching_graph_target,tar_node_names[tar_node_idx], source_graph, src_node_names[src_node_idx])
-        #           if source_graph.nodes[src_node_names[src_node_idx]]['0'] != target_graph.nodes[tar_node_names[tar_node_idx]]['0']:
-        #               not_same_relabel+=1
-        except:
-            print("hello")
+        if is_epsilon_epsilon(src_node_idx, src_node_names, tar_node_idx, tar_node_names):
+            continue
+        elif is_insertion(src_node_idx, src_node_names, tar_node_idx, tar_node_names):
+            matching_graph_target.remove_node(tar_node_names[tar_node_idx])
+        elif is_deletion(src_node_idx, src_node_names, tar_node_idx, tar_node_names):
+            matching_graph_source.remove_node(src_node_names[src_node_idx])
+        elif is_substitution(src_node_names[src_node_idx], tar_node_names[tar_node_idx],source_graph,target_graph):
+            matching_graph_source = relabel_node(matching_graph_source, src_node_names[src_node_idx], target_graph,tar_node_names[tar_node_idx])
+            matching_graph_target = relabel_node(matching_graph_target,tar_node_names[tar_node_idx], source_graph, src_node_names[src_node_idx])
     matching_graph_source = remove_isolated_nodes(matching_graph_source)
     matching_graph_target = remove_isolated_nodes(matching_graph_target)
 
