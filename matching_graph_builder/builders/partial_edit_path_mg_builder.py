@@ -21,22 +21,28 @@ class RandomPathMatchingGraphBuilder(MatchingGraphBuilderBase):
     def __init__(self, src_graphs, src_labels, tar_graphs, tar_labels, mg_creation_alpha, cross_class, label_name, attribute_names,
                  node_ins_c, node_del_c, edge_ins_c, edge_del_c, node_subst_fct, dataset_name, one_hot = False,
                  nbr_mgs_to_create = 1, remove_isolated_nodes= True, multipr = False,
-                 enable_inserts = False):
+                 enable_inserts = False,
+                 alpha_range = []):
         self.nbr_mgs_to_create = nbr_mgs_to_create
         super().__init__(src_graphs, src_labels, tar_graphs, tar_labels, mg_creation_alpha, cross_class, label_name,
                          attribute_names, node_ins_c, node_del_c, edge_ins_c, edge_del_c, node_subst_fct, dataset_name, one_hot, remove_isolated_nodes, multipr)
-
+        self.alphas = None
+        self.alpha_range = alpha_range
         self.build_seeds()
         self.enable_inserts = enable_inserts
 
     def build_seeds(self):
         seeds_dict = {}
+        alphas_dict = {}
         seed_nbrs = list(range(999999))
 
         for lbl, pairs in self.pair_dict.items():
-            seeds_dict[lbl] = random.choices(seed_nbrs, k= len(pairs))
+            seeds_dict[lbl] = random.choices(seed_nbrs, k = len(pairs))
+            if self.alpha_range != []:
+                alphas_dict[lbl] = random.choices(self.alpha_range, k = len(pairs))
 
         self.seeds = seeds_dict
+        self.alphas = alphas_dict
         self.save_seeds(f"{self.dataset_name}_{self.nbr_mgs_to_create}_seeds_random_edit_path_mgs.txt")
 
 
@@ -67,7 +73,9 @@ class RandomPathMatchingGraphBuilder(MatchingGraphBuilderBase):
         for key in mgs_dict.keys():
             mgs_l = []
             seed_pair_zip = zip(self.pair_dict[key], self.seeds[key])
-            # for pair in seed_pair_zip:
+            # for idx, pair in enumerate(seed_pair_zip):
+            #     if self.alphas is not None:
+            #         self.mg_creation_alpha = self.alphas[key][idx]
             #     mgs_l.append( build_mg_from_pair_para(pair,key, self.nbr_mgs_to_create,
             #                                           self.mg_creation_alpha,
             #                                           self.label_name,
@@ -75,8 +83,12 @@ class RandomPathMatchingGraphBuilder(MatchingGraphBuilderBase):
             #                                           self.one_hot,
             #                                           self.enable_inserts))
             with Pool(processes=multiprocessing.cpu_count()-3) as pool:
+                if self.alphas != {}:
+                    alpha_param = self.alphas[key]
+                else:
+                    alpha_param = itertools.repeat(self.mg_creation_alpha)
                 mgs_l = pool.starmap(build_mg_from_pair_para, zip(seed_pair_zip, itertools.repeat(key), itertools.repeat(self.nbr_mgs_to_create),
-                                                                  itertools.repeat(self.mg_creation_alpha),
+                                                                  alpha_param,
                                                                   itertools.repeat(self.label_name),
                                                                   itertools.repeat(self.attribute_names),
                                                                   itertools.repeat(self.one_hot),
@@ -132,12 +144,16 @@ def handle_insertion(matching_graph_source, matching_graph_target,src_node_names
             elif tar_node_name == v:
                 counterpart = u
             if counterpart is not None:
-                if tar_graph_edit_path_dict[counterpart] < len(matching_graph_target.nodes()):
+                if tar_graph_edit_path_dict[counterpart] < len(matching_graph_source.nodes()):
                     edges_to_add.append((tar_graph_edit_path_dict[counterpart], new_node[0]))
 
 
         matching_graph_source.add_nodes_from([new_node])
         matching_graph_source.add_edges_from(edges_to_add)
+
+        for id, vals in matching_graph_source.nodes(data=True):
+            if len(vals) == 0:
+                print("Failure")
         return matching_graph_source
 
 
