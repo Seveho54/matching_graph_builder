@@ -118,6 +118,7 @@ def build_mg_from_pair_para(pair_seed_zip, graph_class, nbr_mgs_to_create, mg_cr
         nbr_operations = int(keep_percentage * len(edit_path))
         src_mg, tar_mg = build_mgs_from_edit_path(edit_path, tar_graph_edit_path_dict, nbr_operations, src_gr, tar_gr, f"_{keep_percentage}", enable_inserts)
         mgs.append(src_mg)
+        # if not enable_inserts:
         mgs.append(tar_mg)
         mgs_lbls.append(graph_class)
         mgs_lbls.append(graph_class)
@@ -175,6 +176,7 @@ def build_mgs_from_edit_path(full_edit_path, tar_graph_edit_path_dict, nbr_opera
         elif is_insertion(src_node_idx, src_node_names, tar_node_idx, tar_node_names):
             if enable_inserts:
                 matching_graph_source = handle_insertion(matching_graph_source, matching_graph_target, src_node_names, tar_node_idx, tar_node_names, enable_inserts, full_edit_path,tar_graph_edit_path_dict)
+                matching_graph_target = handle_insertion(matching_graph_source, matching_graph_target, src_node_names, tar_node_idx, tar_node_names, False, full_edit_path,tar_graph_edit_path_dict)
             else:
                 matching_graph_target = handle_insertion(matching_graph_source, matching_graph_target, src_node_names, tar_node_idx, tar_node_names, enable_inserts, full_edit_path,tar_graph_edit_path_dict)
 
