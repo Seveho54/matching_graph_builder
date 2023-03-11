@@ -10,9 +10,9 @@ import networkx as nx
 class OriginalMatchingGraphBuilder(MatchingGraphBuilderBase):
     def __init__(self, src_graphs, src_labels, tar_graphs, tar_labels, mg_creation_alpha, cross_class, label_name, attribute_names,
                  node_ins_c, node_del_c, edge_ins_c, edge_del_c, node_subst_fct, dataset_name, prune_edges,
-                 one_hot = False, remove_isolated_nodes= True, multipr = False):
+                 one_hot = False, rm_isol_nodes= True, multipr = False):
         super().__init__(src_graphs, src_labels, tar_graphs, tar_labels, mg_creation_alpha, cross_class, label_name,
-                         attribute_names, node_ins_c, node_del_c, edge_ins_c, edge_del_c, node_subst_fct, dataset_name, one_hot, remove_isolated_nodes, multipr)
+                         attribute_names, node_ins_c, node_del_c, edge_ins_c, edge_del_c, node_subst_fct, dataset_name, one_hot, rm_isol_nodes, multipr)
         self.prune = prune_edges
 
 
@@ -68,8 +68,9 @@ class OriginalMatchingGraphBuilder(MatchingGraphBuilderBase):
         if self.prune:
             source_matching_graph, target_matching_graph = self.prune_unwanted_edges(source_matching_graph, target_matching_graph, source_graph, target_graph)
 
-        source_matching_graph = self.remove_isolated_nodes(source_matching_graph)
-        target_matching_graph = self.remove_isolated_nodes(target_matching_graph)
+        if self.rm_isol_nodes:
+            source_matching_graph = self.remove_isolated_nodes(source_matching_graph)
+            target_matching_graph = self.remove_isolated_nodes(target_matching_graph)
 
         return source_matching_graph, target_matching_graph
 

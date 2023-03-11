@@ -18,9 +18,14 @@ from matching_graph_builder.utils.graph_edit_distance import calculate_ged, is_i
 
 
 class RandomPathMatchingGraphBuilder(MatchingGraphBuilderBase):
-    def __init__(self, src_graphs, src_labels, tar_graphs, tar_labels, mg_creation_alpha, cross_class, label_name, attribute_names,
+    '''
+    Class respondible for building the adapted matching-graphs proposed for the augmentation papers. You can build them with insertions enabled or not.
+
+    '''
+    def __init__(self, src_graphs,
+                 src_labels, tar_graphs, tar_labels, mg_creation_alpha, cross_class, label_name, attribute_names,
                  node_ins_c, node_del_c, edge_ins_c, edge_del_c, node_subst_fct, dataset_name, one_hot = False,
-                 nbr_mgs_to_create = 1, remove_isolated_nodes= True, multipr = False,
+                 nbr_mgs_to_create = 1, remove_isolated_nodes= True, multipr = True,
                  enable_inserts = False,
                  alpha_range = []):
         self.nbr_mgs_to_create = nbr_mgs_to_create
@@ -61,9 +66,6 @@ class RandomPathMatchingGraphBuilder(MatchingGraphBuilderBase):
 
 
 
-    # ToDo: Actually only inserts need to be enabled in order for everything to work. Flag, inserts enabled? => if insert percentage => Inserts enabled
-    # Force inserts?
-    # Important check: Same label subs only happens if c(del) + c(ins ) >= c(subs)
     def build_matching_graphs(self):
         mgs_dict = {}
         for key in self.pair_dict.keys():
@@ -73,30 +75,32 @@ class RandomPathMatchingGraphBuilder(MatchingGraphBuilderBase):
         for key in mgs_dict.keys():
             mgs_l = []
             seed_pair_zip = zip(self.pair_dict[key], self.seeds[key])
-            # for idx, pair in enumerate(seed_pair_zip):
-            #     if self.alphas is not None:
-            #         self.mg_creation_alpha = self.alphas[key][idx]
-            #     mgs_l.append( build_mg_from_pair_para(pair,key, self.nbr_mgs_to_create,
-            #                                           self.mg_creation_alpha,
-            #                                           self.label_name,
-            #                                           self.attribute_names,
-            #                                           self.one_hot,
-            #                                           self.enable_inserts))
-            with Pool(processes=multiprocessing.cpu_count()-3) as pool:
-                if self.alphas != {}:
-                    alpha_param = self.alphas[key]
-                else:
-                    alpha_param = itertools.repeat(self.mg_creation_alpha)
-                mgs_l = pool.starmap(build_mg_from_pair_para, zip(seed_pair_zip, itertools.repeat(key), itertools.repeat(self.nbr_mgs_to_create),
-                                                                  alpha_param,
-                                                                  itertools.repeat(self.label_name),
-                                                                  itertools.repeat(self.attribute_names),
-                                                                  itertools.repeat(self.one_hot),
-                                                                  itertools.repeat(self.enable_inserts)))
-                for mg_l in mgs_l:
-                    for gr,lbl in zip(mg_l[0],mg_l[1]):
-                        if len(gr.nodes()) > 0 and len(gr.edges()) > 0:
-                            mgs_dict[lbl].append(gr)
+            if not self.multipr:
+                for idx, pair in enumerate(seed_pair_zip):
+                    if self.alphas is not None:
+                        self.mg_creation_alpha = self.alphas[key][idx]
+                    mgs_l.append( build_mg_from_pair_para(pair,key, self.nbr_mgs_to_create,
+                                                          self.mg_creation_alpha,
+                                                          self.label_name,
+                                                          self.attribute_names,
+                                                          self.one_hot,
+                                                          self.enable_inserts))
+            else:
+                with Pool(processes=multiprocessing.cpu_count()-3) as pool:
+                    if self.alphas != {}:
+                        alpha_param = self.alphas[key]
+                    else:
+                        alpha_param = itertools.repeat(self.mg_creation_alpha)
+                    mgs_l = pool.starmap(build_mg_from_pair_para, zip(seed_pair_zip, itertools.repeat(key), itertools.repeat(self.nbr_mgs_to_create),
+                                                                      alpha_param,
+                                                                      itertools.repeat(self.label_name),
+                                                                      itertools.repeat(self.attribute_names),
+                                                                      itertools.repeat(self.one_hot),
+                                                                      itertools.repeat(self.enable_inserts)))
+                    for mg_l in mgs_l:
+                        for gr,lbl in zip(mg_l[0],mg_l[1]):
+                            if len(gr.nodes()) > 0 and len(gr.edges()) > 0:
+                                mgs_dict[lbl].append(gr)
 
 
         return mgs_dict
@@ -112,11 +116,12 @@ def build_mg_from_pair_para(pair_seed_zip, graph_class, nbr_mgs_to_create, mg_cr
     keep_percs = [i / 100 for i in random.sample(range(10, 90), nbr_mgs_to_create)]
     edit_path,_,_ = calculate_ged(src_gr,tar_gr,mg_creation_alpha,label_name, attribute_names, one_hot)
     tar_graph_edit_path_dict = {v:k for k,v in edit_path}
+    src_graph_edit_path_dict = {k: v for k, v in edit_path}  # too lazy to check for other conversion method to dict
 
     for keep_percentage in keep_percs:
         random.shuffle(edit_path)
         nbr_operations = int(keep_percentage * len(edit_path))
-        src_mg, tar_mg = build_mgs_from_edit_path(edit_path, tar_graph_edit_path_dict, nbr_operations, src_gr, tar_gr, f"_{keep_percentage}", enable_inserts)
+        src_mg, tar_mg = build_mgs_from_edit_path(edit_path, tar_graph_edit_path_dict, nbr_operations, src_gr, tar_gr, f"_{keep_percentage}", enable_inserts,src_graph_edit_path_dict)
         mgs.append(src_mg)
         # if not enable_inserts:
         mgs.append(tar_mg)
@@ -164,7 +169,7 @@ def handle_insertion(matching_graph_source, matching_graph_target,src_node_names
 
 
 
-def build_mgs_from_edit_path(full_edit_path, tar_graph_edit_path_dict, nbr_operations, source_graph, target_graph, keep_percentage_str, enable_inserts):
+def build_mgs_from_edit_path(full_edit_path, tar_graph_edit_path_dict, nbr_operations, source_graph, target_graph, keep_percentage_str, enable_inserts,src_graph_edit_path_dict):
 
     matching_graph_source = nx.Graph(source_graph,name=f"{source_graph.name}_{target_graph.name}_matching_graph{keep_percentage_str}")
     matching_graph_target = nx.Graph(target_graph, name=f"{target_graph.name}_{source_graph.name}_matching_graph{keep_percentage_str}")
@@ -181,6 +186,11 @@ def build_mgs_from_edit_path(full_edit_path, tar_graph_edit_path_dict, nbr_opera
                 matching_graph_target = handle_insertion(matching_graph_source, matching_graph_target, src_node_names, tar_node_idx, tar_node_names, enable_inserts, full_edit_path,tar_graph_edit_path_dict)
 
         elif is_deletion(src_node_idx, src_node_names, tar_node_idx, tar_node_names):
+            if enable_inserts:
+                matching_graph_target = handle_insertion(matching_graph_target, source_graph, tar_node_names,
+                                                         src_node_idx, src_node_names, enable_inserts, full_edit_path,
+                                                         src_graph_edit_path_dict)
+
             matching_graph_source.remove_node(src_node_names[src_node_idx])
         elif is_substitution(src_node_names[src_node_idx], tar_node_names[tar_node_idx],source_graph,target_graph):
             matching_graph_source = relabel_node(matching_graph_source, src_node_names[src_node_idx], target_graph,tar_node_names[tar_node_idx])

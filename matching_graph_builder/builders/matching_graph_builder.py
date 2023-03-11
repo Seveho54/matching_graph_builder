@@ -6,7 +6,7 @@ class MatchingGraphBuilderBase:
     Base class for building matching graphs. There are several implementations of the class.
     '''
     def __init__(self, src_graphs, src_labels, tar_graphs, tar_labels, mg_creation_alpha, cross_class, label_name, attribute_names,node_ins_c, node_del_c, edge_ins_c, edge_del_c, node_subst_fct, dataset_name,
-                 one_hot, remove_isolated_nodes, multipr):
+                 one_hot, rm_isol_nodes, multipr):
         self.label_name = label_name
         self.src_graphs = src_graphs
         self.src_labels = src_labels
@@ -25,7 +25,7 @@ class MatchingGraphBuilderBase:
         self.dataset_name = dataset_name
         self.cross_class = cross_class
         self.pair_dict = self.create_pairs_dict(cross_class)
-        self.remove_isolated_nodes = remove_isolated_nodes
+        self.rm_isol_nodes = rm_isol_nodes
         self.multipr = multipr
 
     def build_matching_graphs(self):

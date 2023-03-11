@@ -11,7 +11,6 @@ def calculate_ged(source_graph, target_graph, alpha, label_name, attribute_names
     else:
         if one_hot:
             metric = 'dirac'
-            # metric = 'wierdac'
         else:
             metric = 'euclidean'
         ged = GED(EditCostVector(1., 1., 1., 1., metric, alpha = alpha))
