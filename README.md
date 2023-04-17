@@ -10,5 +10,5 @@ https://github.com/Icewater1337/graph_loader
 
 each package has to be locally pip installed with 
 ```python 
-pip install -e ."
+pip install -e .
 ```
