@@ -4,11 +4,8 @@ In order to get this to run you need:
 1. a fresh python installation of python 3.9 \
 1.1 Download python 3.9.18 from here https://www.python.org/downloads/release/python-3918/ \
 1.2  ```   sudo apt-get install libreadline-gplv2-dev libncursesw5-dev libssl-dev libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev```\
-1.3 Inside the downloaded and extracted python folder do  ```.configure``` and afterwards ```sudo make & sudo make install```\
+1.3 Inside the downloaded and extracted python folder do  ```./configure``` and afterwards ```sudo make & sudo make install```\
 1.4 Create a virtual environment based on the new python ```/path/to/the/python -m venv /path/to/venv```
-3. CLone https://github.com/Icewater1337/graph-matching-core  
-4. Clone https://github.com/Icewater1337/graph_loader
-5.  each package has to be locally pip installed with 
-```
-pip install -e .
-```
+3. Install numpy using ```pip install numpy```
+4. CLone https://github.com/Icewater1337/graph-matching-core  and install using
+``` pip install -e . ``` inside the cloned folder (pay attention that the venv is active)
