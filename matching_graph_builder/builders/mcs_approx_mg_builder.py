@@ -7,13 +7,15 @@ from matching_graph_builder.utils.graph_edit_distance import calculate_ged
 import networkx as nx
 
 
-class OriginalMatchingGraphBuilder(MatchingGraphBuilderBase):
-    def __init__(self, src_graphs, src_labels, tar_graphs, tar_labels, mg_creation_alpha, cross_class, label_name, attribute_names,
-                 node_ins_c, node_del_c, edge_ins_c, edge_del_c, node_subst_fct, dataset_name, prune_edges,
+class MCSApproxMGBuilder(MatchingGraphBuilderBase):
+    def __init__(self, src_graphs, src_labels, tar_graphs, tar_labels, label_name, attribute_names = [], node_subst_fct = "mcs", dataset_name = "dataset",
                  one_hot = False, rm_isol_nodes= True, multipr = False):
-        super().__init__(src_graphs, src_labels, tar_graphs, tar_labels, mg_creation_alpha, cross_class, label_name,
+        node_ins_c, node_del_c = 1.0,1.0
+        edge_ins_c, edge_del_c = 0.0, 0.0
+        mg_creation_alpha = 1.0
+
+        super().__init__(src_graphs, src_labels, tar_graphs, tar_labels, mg_creation_alpha, False, label_name,
                          attribute_names, node_ins_c, node_del_c, edge_ins_c, edge_del_c, node_subst_fct, dataset_name, one_hot, rm_isol_nodes, multipr)
-        self.prune = prune_edges
 
 
     def build_matching_graphs(self):
@@ -41,8 +43,20 @@ class OriginalMatchingGraphBuilder(MatchingGraphBuilderBase):
         mgs, mgs_lbls = [],[]
         src_gr = graph_pair[0]
         tar_gr = graph_pair[1]
-        edit_path,_,_ = calculate_ged(src_gr,tar_gr,self.mg_creation_alpha,self.label_name, attribute_names= self.attribute_names, one_hot= self.one_hot,
-                                      ins_node= self.node_ins_c, del_node= self.node_del_c, ins_edge= self.edge_ins_c, del_edge= self.edge_del_c)
+        edit_path, _, _ = calculate_ged(
+            src_gr,
+            tar_gr,
+            self.mg_creation_alpha,
+            self.label_name,
+            ins_node=self.node_ins_c,
+            del_node=self.node_del_c,
+            ins_edge=self.edge_ins_c,
+            del_edge=self.edge_del_c,
+            attribute_names=self.attribute_names,
+            one_hot=self.one_hot,
+            mcs=True
+        )
+
         matching_graph_source, matching_graph_target = self._build_mgs_from_edit_path(edit_path, src_gr, tar_gr)
         mgs.append(matching_graph_source)
         mgs.append(matching_graph_target)
@@ -66,8 +80,7 @@ class OriginalMatchingGraphBuilder(MatchingGraphBuilderBase):
         target_matching_graph = self.build_matching_graph_by_node_list(target_graph, target_matching_graph_node_names, source_graph.name)
 
 
-        if self.prune:
-            source_matching_graph, target_matching_graph = self.prune_unwanted_edges(source_matching_graph, target_matching_graph, source_graph, target_graph)
+        source_matching_graph, target_matching_graph = self.prune_unwanted_edges(source_matching_graph, target_matching_graph, source_graph, target_graph)
 
         if self.rm_isol_nodes:
             source_matching_graph = self.remove_isolated_nodes(source_matching_graph)
@@ -242,65 +255,6 @@ class OriginalMatchingGraphBuilder(MatchingGraphBuilderBase):
 
         return result
     ########
-
-
-    # def are_matching_graph_nodes_in_correct_order(source_graph, source_matching_graph,target_graph, target_matching_graph, substitution_path):
-    #     '''
-    #     Takes two matching graphs and their originals, and checks whether the matching graph.nodes are in the proper order
-    #     according to the edit path.
-    #     For example: Edit path: [(0,1),(1,0)] Expected node order source: = [0,1] and for target = [1,0]
-    #     :param source_graph_node_names:
-    #     :param target_graph_node_names:
-    #     :param edit_path:
-    #     :return: True when the nodes have the proper order, else false
-    #     '''
-    #     source_graph_node_names = list(source_graph.nodes)
-    #     target_graph_node_names = list(target_graph.nodes)
-    #
-    #     source_matching_graph_node_names = list(source_matching_graph.nodes)
-    #     target_matching_graph_node_names = list(target_matching_graph.nodes)
-    #
-    #
-    #     i = 0
-    #     for tuple in substitution_path:
-    #         expected_node_name_source = source_graph_node_names[tuple[0]]
-    #         expected_node_name_target = target_graph_node_names[tuple[1]]
-    #
-    #         actual_node_name_source_mg = source_matching_graph_node_names[i]
-    #         actual_node_name_target_mg = target_matching_graph_node_names[i]
-    #
-    #         if expected_node_name_source != actual_node_name_source_mg or \
-    #                 expected_node_name_target != actual_node_name_target_mg:
-    #             return False
-    #         i+=1
-    #
-    #     return True
-
-
-
-
-
-    # def get_substitutions(source_graph, target_graph, edit_path):
-    #     '''
-    #     Removes all the deletions and insertions from the edit path, and just returns the path of substitutions
-    #     :param source_graph:
-    #     :param target_graph:
-    #     :param edit_path:
-    #     :return: A path containing the list of substitutions
-    #     '''
-    #     # Remove insertions and deletions
-    #     substitution_path = edit_path.copy()
-    #
-    #     for tuple in edit_path:
-    #         if tuple[1] >= len(target_graph.nodes) or tuple[0] >= len(source_graph.nodes):
-    #             substitution_path.remove(tuple)
-    #
-    #     return substitution_path
-
-
-
-
-
 
 
 

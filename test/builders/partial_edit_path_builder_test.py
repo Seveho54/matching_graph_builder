@@ -1,7 +1,7 @@
 import graph_loader.graphml_loader  as loader
 import networkx as nx
 
-from builders.partial_edit_path_mg_builder import RandomPathMatchingGraphBuilder, build_mgs_from_edit_path
+from matching_graph_builder.builders.partial_edit_path_mg_builder import RandomPathMatchingGraphBuilder, build_mgs_from_edit_path
 
 
 class TestOriginalMatchingGraphBuilder():

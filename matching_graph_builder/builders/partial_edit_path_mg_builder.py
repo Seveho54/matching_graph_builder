@@ -84,7 +84,11 @@ class RandomPathMatchingGraphBuilder(MatchingGraphBuilderBase):
                                                           self.label_name,
                                                           self.attribute_names,
                                                           self.one_hot,
-                                                          self.enable_inserts))
+                                                          self.enable_inserts,
+                                                          self.node_ins_c,
+                                                          self.node_del_c,
+                                                          self.edge_ins_c,
+                                                          self.edge_del_c))
             else:
                 with Pool(processes=multiprocessing.cpu_count()-3) as pool:
                     if self.alphas != {}:
@@ -96,7 +100,11 @@ class RandomPathMatchingGraphBuilder(MatchingGraphBuilderBase):
                                                                       itertools.repeat(self.label_name),
                                                                       itertools.repeat(self.attribute_names),
                                                                       itertools.repeat(self.one_hot),
-                                                                      itertools.repeat(self.enable_inserts)))
+                                                                      itertools.repeat(self.enable_inserts),
+                                                                      itertools.repeat(self.node_ins_c),
+                                                                      itertools.repeat(self.node_del_c),
+                                                                      itertools.repeat(self.edge_ins_c),
+                                                                      itertools.repeat(self.edge_del_c)))
                     for mg_l in mgs_l:
                         for gr,lbl in zip(mg_l[0],mg_l[1]):
                             if len(gr.nodes()) > 0 and len(gr.edges()) > 0:
@@ -106,7 +114,7 @@ class RandomPathMatchingGraphBuilder(MatchingGraphBuilderBase):
         return mgs_dict
 
 
-def build_mg_from_pair_para(pair_seed_zip, graph_class, nbr_mgs_to_create, mg_creation_alpha, label_name, attribute_names, one_hot, enable_inserts):
+def build_mg_from_pair_para(pair_seed_zip, graph_class, nbr_mgs_to_create, mg_creation_alpha, label_name, attribute_names, one_hot, enable_inserts, node_ins_c, node_del_c, edge_ins_c, edge_del_c):
     mgs, mgs_lbls = [],[]
     graph_pair = pair_seed_zip[0]
     seed = pair_seed_zip[1]
@@ -114,7 +122,7 @@ def build_mg_from_pair_para(pair_seed_zip, graph_class, nbr_mgs_to_create, mg_cr
     src_gr = graph_pair[0]
     tar_gr = graph_pair[1]
     keep_percs = [i / 100 for i in random.sample(range(10, 90), nbr_mgs_to_create)]
-    edit_path,_,_ = calculate_ged(src_gr,tar_gr,mg_creation_alpha,label_name, attribute_names, one_hot)
+    edit_path,_,_ = calculate_ged(src_gr,tar_gr,mg_creation_alpha,label_name, attribute_names= attribute_names, one_hot= one_hot, ins_node= node_ins_c, del_node= node_del_c, ins_edge= edge_ins_c, del_edge= edge_del_c)
     tar_graph_edit_path_dict = {v:k for k,v in edit_path}
     src_graph_edit_path_dict = {k: v for k, v in edit_path}  # too lazy to check for other conversion method to dict
 
