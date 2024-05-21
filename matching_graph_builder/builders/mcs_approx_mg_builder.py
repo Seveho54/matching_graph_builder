@@ -1,15 +1,15 @@
+import networkx as nx
+import matplotlib.pyplot as plt
 import itertools
 import multiprocessing
 from multiprocessing import Pool
-
 from matching_graph_builder.builders.matching_graph_builder import MatchingGraphBuilderBase
 from matching_graph_builder.utils.graph_edit_distance import calculate_ged
-import networkx as nx
 
 
 class MCSApproxMGBuilder(MatchingGraphBuilderBase):
     def __init__(self, src_graphs, src_labels, tar_graphs, tar_labels, label_name, attribute_names = [], node_subst_fct = "mcs", dataset_name = "dataset",
-                 one_hot = False, rm_isol_nodes= True, multipr = False):
+                 one_hot = False, rm_isol_nodes= True, multipr = True):
         node_ins_c, node_del_c = 1.0,1.0
         edge_ins_c, edge_del_c = 0.0, 0.0
         mg_creation_alpha = 1.0
@@ -22,19 +22,20 @@ class MCSApproxMGBuilder(MatchingGraphBuilderBase):
         mgs_dict = {}
         for key in self.pair_dict.keys():
             mgs_dict[key] = []
-        for key in mgs_dict.keys():
-            if self.multipr:
-                with Pool(processes=multiprocessing.cpu_count()-3) as pool:
-                    mgs_l = pool.starmap(self.build_mg_from_pair, zip(self.pair_dict[key], itertools.repeat(key)))
-            else:
-                mgs_l = []
-                for graph_pair in self.pair_dict[key]:
-                    mgs_l.append(self.build_mg_from_pair(graph_pair, key))
+        #for key in mgs_dict.keys():
+            
+        if self.multipr:
+            with Pool(processes=multiprocessing.cpu_count()-3) as pool:
+                mgs_l = pool.starmap(self.build_mg_from_pair, zip(self.pair_dict[0], itertools.repeat(0)))
+        else:
+            mgs_l = []
+            for graph_pair in self.pair_dict[0]:
+                mgs_l.append(self.build_mg_from_pair(graph_pair, 0))
 
-            for mg_l in mgs_l:
-                for gr,lbl in zip(mg_l[0],mg_l[1]):
-                    if len(gr.nodes()) > 0 and len(gr.edges()) > 0:
-                        mgs_dict[lbl].append(gr)
+        for mg_l in mgs_l:
+            for gr,lbl in zip(mg_l[0],mg_l[1]):
+                if len(gr.nodes()) > 0 and len(gr.edges()) > 0:
+                    mgs_dict[lbl].append(gr)
 
 
         return mgs_dict
@@ -254,7 +255,3 @@ class MCSApproxMGBuilder(MatchingGraphBuilderBase):
                 result.remove_node(node_name)
 
         return result
-    ########
-
-
-

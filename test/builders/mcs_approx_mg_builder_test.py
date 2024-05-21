@@ -42,8 +42,3 @@ class TestMCSApproxMGBuilder():
         mgs_dict = self.builder.build_matching_graphs()
         assert len(mgs_dict["mutagen"]) == 6
         assert len(mgs_dict["nonmutagen"]) == 2
-
-
-
-
-

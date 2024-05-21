@@ -70,16 +70,14 @@ class MatchingGraphBuilderBase:
         for cls in self.dataset_classes:
             ret_dict[cls] = []
 
-        for i in range(len(self.src_graphs)):
-            j = i
-            while j < len(self.tar_graphs):
-                if ((self.src_labels[i] == self.tar_labels[j]) or cross_class ):
-                    if  ((self.src_graphs[i].name != self.tar_graphs[j].name) ):
-                        ret_dict[self.src_labels[i]].append((self.src_graphs[i],self.tar_graphs[j]))
-                j += 1
+        len_src = len(self.src_labels)
+        len_tar = len(self.tar_labels)
 
+        for i in range(len_src):
+            for j in range(len_tar):
+                if i < len_src and j < len_tar: 
+                    if ((self.src_labels[i] != self.tar_labels[j]) or cross_class):
+                        if self.src_graphs[i].name != self.tar_graphs[j].name:
+                            ret_dict[self.src_labels[i]].append((self.src_graphs[i], self.tar_graphs[j]))
 
         return ret_dict
-
-
-
